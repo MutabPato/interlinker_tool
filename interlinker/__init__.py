@@ -1,0 +1,1 @@
+"""Django application configuration for the interlinker app."""

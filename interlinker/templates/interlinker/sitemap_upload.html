@@ -1,0 +1,15 @@
+{% extends 'interlinker/base.html' %}
+
+{% block content %}
+<h1>Upload Sitemap</h1>
+<p>Provide your website's sitemap so that the application can ingest the
+internal links. You may supply a direct sitemap URL, upload the file,
+or simply enter the base URL of your site. If only a base URL is given
+the application will attempt to fetch <code>/sitemap.xml</code> from it.</p>
+
+<form method="post" enctype="multipart/form-data" class="form-vertical">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Import sitemap</button>
+</form>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'interlinker/base.html' %}
+
+{% block content %}
+<h1>Interlinked Content</h1>
+<p>The content below shows your text with internal links inserted.
+You can copy the HTML markup from the text area and paste it into
+your blog or CMS.</p>
+
+<h2>Preview</h2>
+<div class="preview">
+    {{ linked_html|safe }}
+</div>
+
+<h2>HTML Output</h2>
+<textarea rows="15" readonly>{{ linked_html }}</textarea>
+
+{% if inserted %}
+    <h3>Inserted Links ({{ inserted|length }})</h3>
+    <ul>
+        {% for slug, url in inserted %}
+            <li><code>{{ slug }}</code> → <a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a></li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<p><a href="{% url 'interlinker:interlink' %}">Back to interlink form</a></p>
+{% endblock %}

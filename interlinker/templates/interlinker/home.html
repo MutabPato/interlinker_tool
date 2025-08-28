@@ -1,0 +1,28 @@
+{% extends 'interlinker/base.html' %}
+
+{% block content %}
+<h1>Interlinker</h1>
+<p>Welcome to the Interlinker web app. Use this tool to import links from your
+sitemap and automatically interlink your reviews or blog posts.</p>
+
+<div class="cards">
+    <div class="card">
+        <h2>Upload Sitemap</h2>
+        <p>Import links from your website's sitemap so they can be matched
+        against keywords in your content.</p>
+        <a href="{% url 'interlinker:sitemap_upload' %}">Get started</a>
+    </div>
+    <div class="card">
+        <h2>Interlink Post</h2>
+        <p>Paste a review or blog post and the app will insert up to 10
+        internal links based on your imported sitemap.</p>
+        <a href="{% url 'interlinker:interlink' %}">Get started</a>
+    </div>
+    <div class="card">
+        <h2>View Links</h2>
+        <p>Browse the links that have been extracted from your uploaded
+        sitemaps.</p>
+        <a href="{% url 'interlinker:sitemap_links' %}">Browse links</a>
+    </div>
+</div>
+{% endblock %}

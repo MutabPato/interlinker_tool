@@ -1,0 +1,14 @@
+{% extends 'interlinker/base.html' %}
+
+{% block content %}
+<h1>Interlink Content</h1>
+<p>Paste a block of text (plain or HTML) and select the site whose
+links should be used. Up to the specified number of keywords will be
+replaced with anchor tags pointing at matching URLs from the domain.</p>
+
+<form method="post" class="form-vertical">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Interlink</button>
+</form>
+{% endblock %}
