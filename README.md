@@ -110,9 +110,6 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 - Debug sitemap fetch issues by checking **HTTP status codes** in `services.py`.  
 - Some sites block bots — try with your own site or use `https://docs.python.org` for testing.  
-- In production:
-  - Run `collectstatic`.  
-  - Serve static files via your web server.  
 
 ---
 
