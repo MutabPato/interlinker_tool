@@ -1,15 +1,29 @@
 {% extends 'interlinker/base.html' %}
 
-{% block content %}
-<h1>Upload Sitemap</h1>
-<p>Provide your website's sitemap so that the application can ingest the
-internal links. You may supply a direct sitemap URL, upload the file,
-or simply enter the base URL of your site. If only a base URL is given
-the application will attempt to fetch <code>/sitemap.xml</code> from it.</p>
+{% block title %}Upload a Sitemap | Interlinker{% endblock %}
+{% block meta_description %}Import, validate, and store internal pages from your sitemap to power automated internal linking.{% endblock %}
 
-<form method="post" enctype="multipart/form-data" class="form-vertical">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Import sitemap</button>
-</form>
+{% block content %}
+<section class="section narrow">
+    <header class="section-header">
+        <h1>Upload a sitemap</h1>
+        <p>Provide a sitemap URL, upload a file, or enter a base domain. We’ll fetch, normalise, and store every eligible internal URL.</p>
+    </header>
+
+    <div class="form-card">
+        <form method="post" enctype="multipart/form-data" class="form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Import sitemap</button>
+        </form>
+        <aside class="form-hint">
+            <h2>Tips for clean imports</h2>
+            <ul>
+                <li>Use the exact protocol (`https://`) for your base URL.</li>
+                <li>Compressed files (`.xml.gz`) are automatically decompressed.</li>
+                <li>Only links that match the submitted domain are stored.</li>
+            </ul>
+        </aside>
+    </div>
+</section>
 {% endblock %}

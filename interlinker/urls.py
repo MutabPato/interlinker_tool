@@ -17,4 +17,6 @@ urlpatterns = [
     path('sitemap/upload/', views.upload_sitemap, name='sitemap_upload'),
     path('sitemap/links/', views.sitemap_links, name='sitemap_links'),
     path('interlink/', views.interlink, name='interlink'),
+    path('robots.txt', views.robots_txt, name='robots_txt'),
+    path('sitemap.xml', views.sitemap_xml, name='sitemap_xml'),
 ]

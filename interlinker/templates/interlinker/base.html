@@ -4,27 +4,87 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Interlinker</title>
+    <title>{% block title %}Interlinker — Internal Link Automation{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Interlinker ingests your sitemap and automatically inserts relevant internal links into long-form content.{% endblock %}" />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}" />
+    <meta property="og:title" content="{% block og_title %}Interlinker — Internal Link Automation{% endblock %}" />
+    <meta property="og:description" content="{% block og_description %}Automate contextual internal linking for better SEO and user experience.{% endblock %}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="{{ request.build_absolute_uri|default_if_none:'' }}" />
+    <meta property="og:site_name" content="Interlinker" />
+    <meta name="twitter:card" content="summary" />
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Interlinker",
+            "applicationCategory": "SEO Tool",
+            "operatingSystem": "Web",
+            "description": "A Django application that ingests sitemaps and automatically inserts internal links into long-form content.",
+            "url": "{{ request.scheme }}://{{ request.get_host }}",
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+            }
+        }
+    </script>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <ul>
-            <li><a href="{% url 'interlinker:home' %}">Home</a></li>
-            <li><a href="{% url 'interlinker:sitemap_upload' %}">Upload Sitemap</a></li>
-            <li><a href="{% url 'interlinker:sitemap_links' %}">Links</a></li>
-            <li><a href="{% url 'interlinker:interlink' %}">Interlink</a></li>
-        </ul>
-    </nav>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" href="{% url 'interlinker:home' %}">
+                <span aria-hidden="true">🕸️</span>
+                <span>Interlinker</span>
+            </a>
+            <nav class="primary-nav" aria-label="Primary">
+                <ul>
+                    <li><a href="{% url 'interlinker:home' %}">Home</a></li>
+                    <li><a href="{% url 'interlinker:sitemap_upload' %}">Upload Sitemap</a></li>
+                    <li><a href="{% url 'interlinker:sitemap_links' %}">Links</a></li>
+                    <li><a class="cta" href="{% url 'interlinker:interlink' %}">Interlink Content</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
     {% if messages %}
-    <ul class="messages">
-    {% for message in messages %}
-        <li class="{{ message.tags }}">{{ message }}</li>
-    {% endfor %}
-    </ul>
+    <div class="container">
+        <ul class="messages" role="status">
+        {% for message in messages %}
+            <li class="message {{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+        </ul>
+    </div>
     {% endif %}
-    <main>
-        {% block content %}{% endblock %}
+    <main id="main-content" class="site-main" tabindex="-1">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
     </main>
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <div>
+                <p class="brand-foot">Interlinker</p>
+                <p>Automating internal links so your readers and search engines never miss the good stuff.</p>
+            </div>
+            <div class="footer-links">
+                <a href="{% url 'interlinker:sitemap_upload' %}">Import sitemap</a>
+                <a href="{% url 'interlinker:interlink' %}">Interlink content</a>
+                <a href="{% url 'interlinker:sitemap_links' %}">Browse links</a>
+            </div>
+            <div class="footer-meta">
+                <p>&copy; {% now 'Y' %} Interlinker. Built with Django.</p>
+                <p><a href="mailto:hello@example.com">Contact</a></p>
+            </div>
+        </div>
+    </footer>
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

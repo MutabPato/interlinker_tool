@@ -1,43 +1,58 @@
 {% extends 'interlinker/base.html' %}
 
+{% block title %}Stored Internal Links | Interlinker{% endblock %}
+{% block meta_description %}Search, filter, and audit the internal links captured from your sitemaps to ensure editorial accuracy.{% endblock %}
+
 {% block content %}
-<h1>Stored Links</h1>
-<p>Below are the links extracted from your uploaded sitemaps. Use the
-filters to narrow down by domain or search for a particular keyword.</p>
+<section class="section">
+    <header class="section-header">
+        <h1>Stored internal links</h1>
+        <p>Filter by domain or search for a keyword to review the URLs available for internal linking.</p>
+    </header>
 
-<form method="get" class="filter-form">
-    <label for="domain">Domain:</label>
-    <select name="domain" id="domain">
-        <option value="">All</option>
-        {% for d in domains %}
-            <option value="{{ d.id }}" {% if d.id|stringformat:"s" == selected_domain|stringformat:"s" %}selected{% endif %}>{{ d.base_url }}</option>
-        {% endfor %}
-    </select>
-    <label for="q">Search:</label>
-    <input type="text" name="q" id="q" value="{{ query }}" placeholder="keyword" />
-    <button type="submit">Filter</button>
-</form>
+    <form method="get" class="filter-form" role="search">
+        <div class="field-group">
+            <label for="domain">Domain</label>
+            <select name="domain" id="domain">
+                <option value="">All</option>
+                {% for d in domains %}
+                    <option value="{{ d.id }}" {% if d.id|stringformat:"s" == selected_domain|stringformat:"s" %}selected{% endif %}>{{ d.base_url }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="field-group">
+            <label for="q">Keyword</label>
+            <input type="text" name="q" id="q" value="{{ query }}" placeholder="e.g. cold wallets" />
+        </div>
+        <button type="submit" class="btn btn-secondary">Filter</button>
+        {% if query or selected_domain %}
+            <a class="btn btn-link" href="{% url 'interlinker:sitemap_links' %}">Clear filters</a>
+        {% endif %}
+    </form>
 
-<p>{{ links|length }} link{{ links|length|pluralize }} found.</p>
+    <p class="small">{{ links|length }} link{{ links|length|pluralize }} available.</p>
 
-<table>
-    <thead>
-        <tr>
-            <th>URL</th>
-            <th>Slug</th>
-            <th>Domain</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for link in links %}
-        <tr>
-            <td><a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.url }}</a></td>
-            <td>{{ link.slug }}</td>
-            <td>{{ link.domain.base_url }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="3">No links stored.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">URL</th>
+                    <th scope="col">Slug</th>
+                    <th scope="col">Domain</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for link in links %}
+                <tr>
+                    <td data-label="URL"><a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.url }}</a></td>
+                    <td data-label="Slug">{{ link.slug }}</td>
+                    <td data-label="Domain">{{ link.domain.base_url }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3">No links stored yet. Upload a sitemap to get started.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
 {% endblock %}

@@ -8,16 +8,15 @@ perform its work.
 
 from __future__ import annotations
 
-import io
+import gzip
 from typing import List, Tuple
 
 from django.contrib import messages
-from django.db import models
-import gzip
-from django.db import transaction
+from django.db import models, transaction
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_GET
 
 from .forms import InterlinkForm, SitemapUploadForm
 from .models import Domain, Link
@@ -190,3 +189,43 @@ def interlink(request: HttpRequest) -> HttpResponse:
     else:
         form = InterlinkForm()
     return render(request, 'interlinker/interlink_form.html', {'form': form})
+
+
+@require_GET
+def robots_txt(request: HttpRequest) -> HttpResponse:
+    """Serve a robots.txt that advertises the app sitemap."""
+
+    sitemap_url = request.build_absolute_uri(reverse('interlinker:sitemap_xml'))
+    content = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        f"Sitemap: {sitemap_url}\n"
+    )
+    return HttpResponse(content, content_type='text/plain')
+
+
+@require_GET
+def sitemap_xml(request: HttpRequest) -> HttpResponse:
+    """Expose a minimal sitemap for the application itself."""
+
+    base_url = f"{request.scheme}://{request.get_host()}"
+    static_paths = [
+        reverse('interlinker:home'),
+        reverse('interlinker:sitemap_upload'),
+        reverse('interlinker:sitemap_links'),
+        reverse('interlinker:interlink'),
+    ]
+    lines = [
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">",
+    ]
+    for path in static_paths:
+        lines.extend([
+            "  <url>",
+            f"    <loc>{base_url}{path}</loc>",
+            "    <changefreq>weekly</changefreq>",
+            "    <priority>0.6</priority>",
+            "  </url>",
+        ])
+    lines.append("</urlset>")
+    return HttpResponse('\n'.join(lines), content_type='application/xml')
