@@ -1,0 +1,124 @@
+{% extends 'interlinker/base.html' %}
+
+{% block title %}Privacy Policy | Interlinker{% endblock %}
+{% block meta_description %}Learn how Interlinker collects, uses, and protects your personal data, sitemap information, and interlinking history.{% endblock %}
+
+{% block content %}
+<section class="section narrow policy">
+    <header class="section-header">
+        <h1>Privacy Policy</h1>
+        <p>Last updated: {{ now|date:"F j, Y" }}</p>
+        <p>This Privacy Policy explains how Interlinker (the "Service", "we", "us", or "our") collects, uses, discloses, and safeguards information when you visit and use <code>interlinker</code>. It also describes the choices you have regarding your data.</p>
+    </header>
+
+    <article class="policy-article">
+        <h2>1. Key takeaways</h2>
+        <ul>
+            <li>We process the account details you provide (such as email, username, and password hashes) to authenticate you and secure your workspace.</li>
+            <li>We store the sitemap data you ingest, generated internal-link HTML, and run history so that you can revisit past results.</li>
+            <li>We do not sell your data. We only share it with trusted service providers or when required by law.</li>
+            <li>You can request deletion of your account and associated data at any time by contacting us.</li>
+        </ul>
+    </article>
+
+    <article class="policy-article">
+        <h2>2. Information we collect</h2>
+        <h3>Account and authentication data</h3>
+        <p>When you create an account or sign in, we collect:</p>
+        <ul>
+            <li><strong>Identification:</strong> username, display name, and email address.</li>
+            <li><strong>Credentials:</strong> salted and hashed password managed through Django's authentication framework.</li>
+            <li><strong>Session data:</strong> cookies issued by Django to keep you signed in.</li>
+        </ul>
+        <h3>Operational data</h3>
+        <ul>
+            <li><strong>Sitemaps and link inventories:</strong> URLs, slugs, and metadata that you import for the purpose of generating internal links.</li>
+            <li><strong>Content you submit:</strong> articles, HTML, and keyword priorities used when running the interlink engine.</li>
+            <li><strong>Generation history:</strong> summaries of the inputs and outputs (including linked HTML, priority pairs, link counts, run timestamps) stored for your convenience.</li>
+        </ul>
+        <h3>Usage and technical data</h3>
+        <p>We may log IP address, browser user agent, and timestamps for security, rate limiting, and troubleshooting. These logs are kept for a limited period.</p>
+        <h3>Cookies</h3>
+        <p>The Service relies on strictly necessary cookies (e.g., the session cookie issued after login). We do not currently use advertising or tracking cookies.</p>
+    </article>
+
+    <article class="policy-article">
+        <h2>3. How we use your information</h2>
+        <ul>
+            <li>To create and maintain your account, authenticate you, and manage secure access.</li>
+            <li>To process your submissions and serve interlinked HTML tailored to your sitemap and priority keywords.</li>
+            <li>To provide history, analytics, and quality of life features (e.g., copy buttons, re-runs) that depend on storing output data.</li>
+            <li>To monitor, debug, and improve platform performance and security.</li>
+            <li>To communicate about service changes, policy updates, or account-specific issues.</li>
+        </ul>
+    </article>
+
+    <article class="policy-article">
+        <h2>4. Legal bases for processing (EEA/UK users)</h2>
+        <ul>
+            <li><strong>Contractual necessity:</strong> Operating the Service, running interlink jobs, and delivering stored history required to fulfill your requests.</li>
+            <li><strong>Legitimate interests:</strong> Securing the platform, preventing abuse, improving features, and supporting analytics that do not override your privacy rights.</li>
+            <li><strong>Consent:</strong> Optional features, such as receiving marketing communications, will rely on your explicit opt-in (if ever introduced).</li>
+        </ul>
+    </article>
+
+    <article class="policy-article">
+        <h2>5. Data retention</h2>
+        <p>We retain account data while your account remains active and for a reasonable period afterwards to comply with legal obligations, resolve disputes, or enforce agreements. You may request deletion of your account and associated history at any time; we will honor such requests unless we must keep certain data for legal or audit reasons.</p>
+    </article>
+
+    <article class="policy-article">
+        <h2>6. How we share information</h2>
+        <p>We share data only when necessary:</p>
+        <ul>
+            <li><strong>Service providers:</strong> Trusted vendors that host our infrastructure, email delivery, or analytics, under data-processing agreements that require confidentiality and security.</li>
+            <li><strong>Legal disclosures:</strong> When required by applicable law, regulation, legal process, or governmental request.</li>
+            <li><strong>Business transfers:</strong> In connection with a merger, financing, acquisition, or dissolution, your data may be part of the transferred assets. We will provide notice before data is transferred and becomes subject to a different privacy policy.</li>
+        </ul>
+        <p>We do not sell or rent personal information.</p>
+    </article>
+
+    <article class="policy-article">
+        <h2>7. International transfers</h2>
+        <p>Your information may be processed in countries other than your own. Where required, we implement safeguards such as Standard Contractual Clauses or rely on adequacy decisions to protect your data during cross-border transfers.</p>
+    </article>
+
+    <article class="policy-article">
+        <h2>8. Your rights</h2>
+        <p>Depending on your jurisdiction, you may have the right to:</p>
+        <ul>
+            <li>Access, correct, or update the personal information we hold about you.</li>
+            <li>Request deletion or anonymization of your data.</li>
+            <li>Object to or restrict our processing activities.</li>
+            <li>Port your data to another service provider.</li>
+            <li>Lodge a complaint with your local data protection authority.</li>
+        </ul>
+        <p>To exercise any of these rights, contact us using the details below. We will verify your identity before fulfilling your request.</p>
+    </article>
+
+    <article class="policy-article">
+        <h2>9. Security</h2>
+        <p>We implement administrative, technical, and physical safeguards to protect your data—such as encrypted connections (HTTPS), hashed passwords, access controls, and monitoring. While we strive to protect personal information, no system is completely secure; please use strong passwords and keep your credentials confidential.</p>
+    </article>
+
+    <article class="policy-article">
+        <h2>10. Children</h2>
+        <p>The Service is not directed to individuals under 16, and we do not knowingly collect personal data from children. If you believe that a child has provided personal data, please contact us so we can take appropriate action.</p>
+    </article>
+
+    <article class="policy-article">
+        <h2>11. Third-party links and content</h2>
+        <p>The Service may contain links to third-party sites. These sites operate independently from us and have their own privacy policies. We encourage you to review the privacy statements of any linked services you use.</p>
+    </article>
+
+    <article class="policy-article">
+        <h2>12. Changes to this policy</h2>
+        <p>We may update this Privacy Policy from time to time to reflect changes in technology, law, or our practices. When we do, we will revise the "Last updated" date and, when appropriate, provide additional notice (such as through email or the dashboard). Continued use of the Service after updates constitutes acceptance of the revised policy.</p>
+    </article>
+
+    <article class="policy-article">
+        <h2>13. Contact us</h2>
+        <p>If you have questions or requests about this Privacy Policy or our handling of your information, email <a href="mailto:hello@example.com">hello@example.com</a>. We aim to respond within 30 days.</p>
+    </article>
+</section>
+{% endblock %}

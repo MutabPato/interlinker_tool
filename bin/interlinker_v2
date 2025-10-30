@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""CLI for running Interlinker engine v2."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+from typing import Any, Dict, List
+
+from interlinker.engine_v2.config import EngineConfig, load_config
+from interlinker.engine_v2.index import dry_run, suggest_links
+from interlinker.engine_v2.types import Page
+
+
+def _page_from_dict(data: Dict[str, Any]) -> Page:
+    metadata = data.get("metadata") or {}
+    return Page(
+        url=data.get("url", ""),
+        title=data.get("title", ""),
+        html=data.get("html", ""),
+        text=data.get("text", data.get("html", "")),
+        lang=data.get("lang"),
+        tags=data.get("tags", []),
+        type=data.get("type", "other"),
+        published_at=data.get("published_at"),
+        canonical=data.get("canonical"),
+        noindex=bool(data.get("noindex", False)),
+        nofollow=bool(data.get("nofollow", False)),
+        metadata=metadata,
+    )
+
+
+def _load_json(path: Path) -> Any:
+    with path.open("r", encoding="utf-8") as stream:
+        return json.load(stream)
+
+
+def load_pages(path: Path) -> List[Page]:
+    data = _load_json(path)
+    if isinstance(data, dict):
+        return [_page_from_dict(data)]
+    if isinstance(data, list):
+        return [_page_from_dict(item) for item in data]
+    raise ValueError(f"Unsupported corpus format: {type(data)}")
+
+
+def configure(args: argparse.Namespace) -> EngineConfig:
+    config_path = Path(args.config) if args.config else Path("engine_v2.yml")
+    config = load_config(config_path if config_path.exists() else None)
+    if args.max_links_per_page is not None:
+        config.raw["max_links_per_page"] = args.max_links_per_page
+    return config
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Interlinker engine v2 CLI")
+    parser.add_argument("--source", required=True, help="Source page JSON path or URL")
+    parser.add_argument("--corpus", required=True, help="Corpus JSON path")
+    parser.add_argument("--config", help="Override configuration file path")
+    parser.add_argument("--emit-json", action="store_true", help="Print JSON suggestions")
+    parser.add_argument("--max-links-per-page", type=int, help="Override link budget")
+    parser.add_argument("--dry-run", action="store_true", help="Run diagnostics across the corpus")
+    parser.add_argument("--reindex", action="store_true", help="Rebuild local indices (no-op placeholder)")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    source_path = Path(args.source)
+    corpus_path = Path(args.corpus)
+
+    if not source_path.exists():
+        raise SystemExit(f"source not found: {source_path}")
+    if not corpus_path.exists():
+        raise SystemExit(f"corpus not found: {corpus_path}")
+
+    config = configure(args)
+    corpus_pages = load_pages(corpus_path)
+    source_page = load_pages(source_path)[0]
+
+    if args.reindex:
+        print("[engine_v2] Reindexing corpus statistics (in-memory)")
+
+    if args.dry_run:
+        metrics = dry_run(corpus_pages, corpus_pages, config)
+        print(json.dumps(metrics, indent=2))
+        return 0
+
+    suggestions = suggest_links(source_page, corpus_pages, config)
+
+    if args.emit_json:
+        payload = [
+            {
+                "target_url": suggestion.target_url,
+                "reason": suggestion.reason,
+                "score": suggestion.score,
+                "anchors": [anchor.__dict__ for anchor in suggestion.anchors],
+                "placement_hint": suggestion.placement_hint,
+                "rel": suggestion.rel,
+                "risk_flags": suggestion.risk_flags,
+            }
+            for suggestion in suggestions
+        ]
+        print(json.dumps(payload, indent=2))
+    else:
+        for suggestion in suggestions:
+            anchors = ", ".join(anchor.text for anchor in suggestion.anchors)
+            print(f"{suggestion.score:0.2f}\t{suggestion.target_url}\t[{anchors}]")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

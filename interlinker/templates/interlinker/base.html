@@ -34,6 +34,24 @@
             }
         }
     </script>
+    <script>
+        (function () {
+            var storageKey = 'interlinker-theme';
+            var root = document.documentElement;
+            try {
+                var stored = localStorage.getItem(storageKey);
+                if (stored === 'light' || stored === 'dark') {
+                    root.dataset.theme = stored;
+                    return;
+                }
+            } catch (err) {
+                // localStorage may be unavailable; ignore and fall back to system preference.
+            }
+            if (!root.dataset.theme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                root.dataset.theme = 'dark';
+            }
+        })();
+    </script>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -49,7 +67,24 @@
                     <li><a href="{% url 'interlinker:home' %}">Home</a></li>
                     <li><a href="{% url 'interlinker:sitemap_upload' %}">Upload Sitemap</a></li>
                     <li><a href="{% url 'interlinker:sitemap_links' %}">Links</a></li>
-                    <li><a class="cta" href="{% url 'interlinker:interlink' %}">Interlink Content</a></li>
+                    {% if request.user.is_authenticated %}
+                        <li><a href="{% url 'interlinker:history' %}">History</a></li>
+                        <li><a class="cta" href="{% url 'interlinker:interlink' %}">Interlink Content</a></li>
+                        <li class="account-chip">
+                            <span aria-hidden="true">👤</span>
+                            <span class="visually-hidden">Signed in as </span>{{ request.user.username }}
+                        </li>
+                        <li><a href="{% url 'logout' %}">Sign out</a></li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}">Sign in</a></li>
+                        <li><a class="cta" href="{% url 'interlinker:signup' %}">Create account</a></li>
+                    {% endif %}
+                    <li class="theme-toggle-item">
+                        <button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false">
+                            <span class="icon" aria-hidden="true">🌞</span>
+                            <span class="label">Light</span>
+                        </button>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -78,6 +113,7 @@
                 <a href="{% url 'interlinker:sitemap_upload' %}">Import sitemap</a>
                 <a href="{% url 'interlinker:interlink' %}">Interlink content</a>
                 <a href="{% url 'interlinker:sitemap_links' %}">Browse links</a>
+                <a href="{% url 'interlinker:privacy' %}">Privacy policy</a>
             </div>
             <div class="footer-meta">
                 <p>&copy; {% now 'Y' %} Interlinker. Built with Django.</p>
@@ -85,6 +121,204 @@
             </div>
         </div>
     </footer>
+    <div id="loading-indicator" class="loading-indicator" aria-hidden="true">
+        <div class="loading-indicator__backdrop" aria-hidden="true"></div>
+        <div class="loading-indicator__inner" role="status" aria-live="polite">
+            <div class="loading-indicator__label">Processing…</div>
+            <div class="loading-indicator__track" aria-hidden="true">
+                <div class="loading-indicator__bar" data-loading-bar></div>
+            </div>
+            <div class="loading-indicator__percent" data-loading-percent>0%</div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var storageKey = 'interlinker-theme';
+            var root = document.documentElement;
+            function setTheme(theme) {
+                root.dataset.theme = theme;
+                try {
+                    localStorage.setItem(storageKey, theme);
+                } catch (err) {
+                    // Ignore storage failures (e.g., private mode).
+                }
+            }
+
+            function updateToggle(theme, toggle) {
+                if (!toggle) {
+                    return;
+                }
+                var isDark = theme === 'dark';
+                toggle.setAttribute('aria-pressed', String(isDark));
+                var icon = toggle.querySelector('.icon');
+                var label = toggle.querySelector('.label');
+                if (icon) {
+                    icon.textContent = isDark ? '🌙' : '🌞';
+                }
+                if (label) {
+                    label.textContent = isDark ? 'Dark' : 'Light';
+                }
+            }
+
+            function init() {
+                var toggle = document.querySelector('[data-theme-toggle]');
+                if (!toggle) {
+                    return;
+                }
+
+                var currentTheme = root.dataset.theme || 'light';
+                setTheme(currentTheme);
+                updateToggle(currentTheme, toggle);
+
+                toggle.addEventListener('click', function () {
+                    currentTheme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+                    setTheme(currentTheme);
+                    updateToggle(currentTheme, toggle);
+                });
+
+                if (window.matchMedia) {
+                    var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+                    if (mediaQuery.addEventListener) {
+                        mediaQuery.addEventListener('change', function (event) {
+                            try {
+                                if (localStorage.getItem(storageKey)) {
+                                    return;
+                                }
+                            } catch (err) {
+                                // ignore
+                            }
+                            var themeFromSystem = event.matches ? 'dark' : 'light';
+                            setTheme(themeFromSystem);
+                            updateToggle(themeFromSystem, toggle);
+                        });
+                    }
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+    <script>
+        (function () {
+            function onReady(fn) {
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', fn);
+                } else {
+                    fn();
+                }
+            }
+
+            onReady(function () {
+                var indicator = document.getElementById('loading-indicator');
+                if (!indicator) {
+                    return;
+                }
+
+                var bar = indicator.querySelector('[data-loading-bar]');
+                var percentLabel = indicator.querySelector('[data-loading-percent]');
+                var progressTimer = null;
+
+                function setProgress(value) {
+                    var clamped = Math.max(0, Math.min(100, value));
+                    if (bar) {
+                        bar.style.setProperty('--loading-progress', clamped + '%');
+                        bar.style.width = clamped + '%';
+                    }
+                    if (percentLabel) {
+                        percentLabel.textContent = clamped + '%';
+                    }
+                }
+
+                function startProgress() {
+                    clearInterval(progressTimer);
+                    var current = 5;
+                    setProgress(current);
+                    progressTimer = window.setInterval(function () {
+                        current += Math.max(1, Math.floor((100 - current) * 0.08));
+                        if (current >= 95) {
+                            current = 95;
+                            clearInterval(progressTimer);
+                        }
+                        setProgress(current);
+                    }, 180);
+                }
+
+                function finishProgress() {
+                    clearInterval(progressTimer);
+                    var current = 95;
+                    setProgress(current);
+                    progressTimer = window.setInterval(function () {
+                        current += 2;
+                        if (current >= 100) {
+                            current = 100;
+                            setProgress(current);
+                            clearInterval(progressTimer);
+                        } else {
+                            setProgress(current);
+                        }
+                    }, 30);
+                }
+
+                function resetProgress() {
+                    clearInterval(progressTimer);
+                    progressTimer = null;
+                    setProgress(0);
+                }
+
+                function showIndicator() {
+                    indicator.setAttribute('data-active', 'true');
+                    indicator.removeAttribute('aria-hidden');
+                    startProgress();
+                }
+
+                function hideIndicator() {
+                    indicator.removeAttribute('data-active');
+                    indicator.setAttribute('aria-hidden', 'true');
+                    finishProgress();
+                    window.setTimeout(resetProgress, 300);
+                    document.querySelectorAll('.is-loading').forEach(function (control) {
+                        control.disabled = false;
+                        control.classList.remove('is-loading');
+                        control.removeAttribute('aria-busy');
+                    });
+                    document.querySelectorAll('form[data-loading-form]').forEach(function (form) {
+                        delete form.dataset.loadingActive;
+                    });
+                }
+
+                var forms = document.querySelectorAll('form[data-loading-form]');
+                forms.forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (form.dataset.loadingActive === 'true') {
+                            return;
+                        }
+                        if (event.defaultPrevented) {
+                            return;
+                        }
+                        if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+                            return;
+                        }
+                        form.dataset.loadingActive = 'true';
+                        showIndicator();
+                        var controls = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                        controls.forEach(function (control) {
+                            control.disabled = true;
+                            control.classList.add('is-loading');
+                            control.setAttribute('aria-busy', 'true');
+                        });
+                    });
+                });
+
+                window.addEventListener('pageshow', function () {
+                    hideIndicator();
+                });
+            });
+        })();
+    </script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

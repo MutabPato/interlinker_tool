@@ -12,26 +12,86 @@ import gzip
 from typing import List, Tuple
 
 from django.contrib import messages
+from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView as DjangoLoginView
 from django.db import models, transaction
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET
 
-from .forms import InterlinkForm, SitemapUploadForm
-from .models import Domain, Link
+from .forms import InterlinkForm, LoginForm, SignUpForm, SitemapUploadForm
+from .models import Domain, InterlinkGeneration, Link
 from .services import (
     build_link_map,
     fetch_sitemap_text,
     interlink_html,
     normalize_slug_from_url,
     parse_sitemap,
+    strip_existing_links_from_html,
 )
 
 
 def home(request: HttpRequest) -> HttpResponse:
     """Render the home page which offers navigation to app features."""
     return render(request, 'interlinker/home.html')
+
+
+def privacy(request: HttpRequest) -> HttpResponse:
+    """Display the privacy policy for Interlinker."""
+
+    return render(request, 'interlinker/privacy.html')
+
+
+class InterlinkLoginView(DjangoLoginView):
+    """Custom login view that uses the app styling and redirects to interlink."""
+
+    form_class = LoginForm
+    template_name = 'registration/login.html'
+
+    def get_success_url(self) -> str:
+        return self.get_redirect_url() or reverse('interlinker:interlink')
+
+
+def signup(request: HttpRequest) -> HttpResponse:
+    """Allow new users to create an account and begin interlinking."""
+
+    if request.user.is_authenticated:
+        messages.info(request, 'You already have an account and are signed in.')
+        return redirect('interlinker:interlink')
+
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Account created — welcome aboard!')
+            return redirect('interlinker:interlink')
+    else:
+        form = SignUpForm()
+
+    return render(request, 'interlinker/account_register.html', {'form': form})
+
+
+@login_required
+def interlink_history(request: HttpRequest) -> HttpResponse:
+    """List previous interlink generations for the signed-in user."""
+
+    generations = (
+        InterlinkGeneration.objects
+        .filter(user=request.user)
+        .select_related('domain')
+        .order_by('-created_at')
+    )
+
+    return render(
+        request,
+        'interlinker/history.html',
+        {
+            'generations': generations,
+        },
+    )
 
 
 @transaction.atomic
@@ -153,6 +213,7 @@ def sitemap_links(request: HttpRequest) -> HttpResponse:
     )
 
 
+@login_required
 def interlink(request: HttpRequest) -> HttpResponse:
     """Handle displaying the interlink form and processing the content."""
     if request.method == 'POST':
@@ -162,9 +223,11 @@ def interlink(request: HttpRequest) -> HttpResponse:
             content: str = form.cleaned_data['content']
             max_links: int = form.cleaned_data['max_links']
             is_html: bool = form.cleaned_data['is_html_input']
+            strip_links: bool = form.cleaned_data['strip_existing_links']
             slug_map = build_link_map(domain)
-            if not slug_map:
-                messages.warning(request, 'There are no links stored for this domain.')
+            priority_pairs: List[Tuple[str, str]] = form.cleaned_data['priority_pairs']
+            if not slug_map and not priority_pairs:
+                messages.warning(request, 'There are no links stored for this domain yet.')
                 return render(request, 'interlinker/interlink_form.html', {'form': form})
             # If the content is not HTML, wrap paragraphs in <p> tags
             if not is_html:
@@ -172,18 +235,70 @@ def interlink(request: HttpRequest) -> HttpResponse:
                 html_input = ''.join(f'<p>{p}</p>' for p in paragraphs)
             else:
                 html_input = content
-            linked_html = interlink_html(html_input, slug_map, max_links=max_links)
-            # Build a list of inserted links for summary
-            inserted: List[Tuple[str, str]] = []
-            for slug, url in slug_map.items():
-                if f'href="{url}"' in linked_html:
-                    inserted.append((slug, url))
+            if strip_links:
+                html_input = strip_existing_links_from_html(html_input)
+            linked_html, inserted = interlink_html(
+                html_input,
+                slug_map,
+                max_links=max_links,
+                priority_pairs=priority_pairs,
+            )
+
+            def _normalise(term: str) -> str:
+                return ' '.join(term.lower().split())
+
+            total_inserted = len(inserted)
+            priority_inserted = sum(1 for item in inserted if item.priority)
+            auto_inserted = total_inserted - priority_inserted
+
+            inserted_records = [
+                {
+                    'term': item.term,
+                    'url': item.url,
+                    'priority': item.priority,
+                    'context': item.context,
+                }
+                for item in inserted
+            ]
+            priority_pairs_data = [
+                {'term': term, 'url': url}
+                for term, url in priority_pairs
+            ]
+            excerpt_source = content if not is_html else html_input
+            excerpt = (excerpt_source or '').strip()
+            if len(excerpt) > 1000:
+                excerpt = f"{excerpt[:1000].rstrip()}…"
+
+            InterlinkGeneration.objects.create(
+                user=request.user,
+                domain=domain,
+                source_excerpt=excerpt,
+                linked_html=linked_html,
+                inserted_total=total_inserted,
+                inserted_priority=priority_inserted,
+                inserted_auto=auto_inserted,
+                max_links=max_links,
+                source_is_html=is_html,
+                priority_pairs=priority_pairs_data,
+                inserted_records=inserted_records,
+            )
+
+            priority_missing = [
+                pair['term']
+                for pair in priority_pairs_data
+                if _normalise(pair['term']) not in {_normalise(item.term) for item in inserted if item.priority}
+            ]
             return render(
                 request,
                 'interlinker/interlink_result.html',
                 {
                     'linked_html': linked_html,
                     'inserted': inserted,
+                    'priority_missing': priority_missing,
+                    'priority_inserted': priority_inserted,
+                    'auto_inserted': auto_inserted,
+                    'total_inserted': total_inserted,
+                    'max_links': max_links,
                 },
             )
     else:

@@ -17,7 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from interlinker.views import InterlinkLoginView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/login/', InterlinkLoginView.as_view(), name='login'),
+    path('accounts/', include('django.contrib.auth.urls')),
     path('', include('interlinker.urls')),
 ]

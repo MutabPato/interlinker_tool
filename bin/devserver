@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$PROJECT_ROOT"
+
+for candidate in .env .env.example; do
+  if [ -f "$candidate" ]; then
+    # Load environment variables from the first available file.
+    set -a
+    # shellcheck disable=SC1090
+    source "$candidate"
+    set +a
+    break
+  fi
+done
+
+export DJANGO_SECRET_KEY="${DJANGO_SECRET_KEY:-dev-secret}"
+export DJANGO_DEBUG="${DJANGO_DEBUG:-true}"
+export DJANGO_ALLOWED_HOSTS="${DJANGO_ALLOWED_HOSTS:-127.0.0.1,localhost}"
+export DJANGO_CSRF_TRUSTED_ORIGINS="${DJANGO_CSRF_TRUSTED_ORIGINS:-http://127.0.0.1,http://localhost}"
+
+python manage.py migrate --noinput
+exec python manage.py runserver "${1:-127.0.0.1:8000}"

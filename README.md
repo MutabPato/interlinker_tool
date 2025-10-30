@@ -113,6 +113,24 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 ---
 
+## ✅ Quality Checks
+
+- Install dev tooling: `pip install -r requirements-dev.txt`
+- Run linting: `ruff check`
+- Execute tests: `DJANGO_SECRET_KEY=test-secret DJANGO_DEBUG=true pytest`
+
+---
+
+## 🏭 Production Deployment
+
+1. Copy `.env.example` to `.env` and set `DJANGO_SECRET_KEY`, `DATABASE_URL`, and trusted hosts/origins.
+2. Build the container: `docker build -t interlinker .`  
+   Run locally with Postgres: `docker run --env-file .env -p 8000:8000 interlinker`.
+3. The bundled `entrypoint.sh` runs migrations and `collectstatic` on startup; set `SKIP_COLLECTSTATIC=1` if static assets are baked at build time.
+4. Deploy to Cloud Run or similar by pushing the image, setting environment variables, and pointing a managed Postgres instance at `DATABASE_URL`.
+
+---
+
 ## 📜 License
 
 This project is licensed under the **MIT License** – feel free to use and modify.  

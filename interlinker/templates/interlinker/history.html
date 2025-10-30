@@ -1,0 +1,130 @@
+{% extends 'interlinker/base.html' %}
+
+{% block title %}Your Interlinker History{% endblock %}
+{% block meta_description %}Browse every internal linking run you have generated with Interlinker and revisit the HTML output.{% endblock %}
+
+{% block content %}
+<section class="section narrow">
+    <header class="section-header">
+        <h1>Generation history</h1>
+        <p>Revisit every interlinked article you've created. Copy the HTML again, review inserted anchors, or start a new run.</p>
+    </header>
+
+    {% if generations %}
+        <div class="history-list">
+            {% for generation in generations %}
+                <article class="history-item">
+                    <header class="history-header">
+                        <div>
+                            <h2>
+                                {% if generation.domain %}
+                                    {{ generation.domain.hostname }}
+                                {% else %}
+                                    Unknown domain
+                                {% endif %}
+                            </h2>
+                            <p class="small">Generated {{ generation.created_at|date:"M j, Y H:i" }} · Max {{ generation.max_links }} links</p>
+                        </div>
+                        <div class="history-metrics">
+                            <span class="badge">{{ generation.inserted_total }} total</span>
+                            <span class="badge alt">{{ generation.inserted_priority }} priority</span>
+                            <span class="badge subtle">{{ generation.inserted_auto }} automatic</span>
+                        </div>
+                    </header>
+                    <div class="history-body">
+                        <p class="excerpt">{{ generation.source_excerpt|truncatechars:240 }}</p>
+                        {% if generation.priority_pairs %}
+                            <div class="priority-list small">
+                                <p>Priority pairs:</p>
+                                <ul>
+                                    {% for pair in generation.priority_pairs %}
+                                        <li><code>{{ pair.term }}</code> → <a href="{{ pair.url }}" target="_blank" rel="noopener">{{ pair.url }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        {% if generation.inserted_records %}
+                            <details>
+                                <summary>Inserted links</summary>
+                                <ul class="inserted-list">
+                                    {% for record in generation.inserted_records %}
+                                        <li>
+                                            <span class="link-term">{{ record.term }}</span>
+                                            <a href="{{ record.url }}" target="_blank" rel="noopener">{{ record.url }}</a>
+                                            {% if record.priority %}<span class="chip">Priority</span>{% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </details>
+                        {% endif %}
+                    </div>
+                    <footer class="history-footer">
+                        <a class="btn btn-secondary" href="{% url 'interlinker:interlink' %}">Start new run</a>
+                        <button type="button" class="btn btn-link" data-copy-html="{{ forloop.counter0 }}">Copy HTML again</button>
+                        <textarea id="history-html-{{ forloop.counter0 }}" class="history-html" hidden>{{ generation.linked_html }}</textarea>
+                    </footer>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h2>No generations yet</h2>
+            <p>Once you run the interlinker, your results will appear here for quick access.</p>
+            <a class="btn btn-primary" href="{% url 'interlinker:interlink' %}">Start interlinking</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-copy-html]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const index = button.getAttribute('data-copy-html');
+                    const textarea = document.getElementById('history-html-' + index);
+                    if (!textarea) {
+                        return;
+                    }
+                    const clipboardSupported = navigator.clipboard && typeof navigator.clipboard.writeText === 'function';
+                    const html = textarea.value;
+                    const onSuccess = function () {
+                        button.textContent = 'Copied!';
+                        button.classList.add('copied');
+                        setTimeout(function () {
+                            button.textContent = 'Copy HTML again';
+                            button.classList.remove('copied');
+                        }, 1500);
+                    };
+                    const onFailure = function () {
+                        button.textContent = 'Copy not available';
+                        setTimeout(function () {
+                            button.textContent = 'Copy HTML again';
+                        }, 1500);
+                    };
+
+                    if (clipboardSupported) {
+                        navigator.clipboard.writeText(html).then(onSuccess).catch(onFailure);
+                    } else {
+                        textarea.hidden = false;
+                        textarea.select();
+                        let copied = false;
+                        try {
+                            copied = document.execCommand && document.execCommand('copy');
+                        } catch (err) {
+                            copied = false;
+                        }
+                        textarea.hidden = true;
+                        textarea.blur();
+                        window.getSelection().removeAllRanges();
+                        if (copied) {
+                            onSuccess();
+                        } else {
+                            onFailure();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

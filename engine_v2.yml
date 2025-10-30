@@ -1,0 +1,30 @@
+# Interlinker Engine v2 configuration
+max_candidates: 120
+score_floor: 0.45
+base_links_per_page: 3
+max_links_per_page: 12
+max_anchors_per_target: 2
+title_bm25_norm: 8.0
+body_bm25_norm: 12.0
+quality_wordcount_norm: 900
+max_inlinks: 80
+max_click_depth: 6
+freshness_half_life_days: 90
+product_wordcount_min: 250
+allow_cross_language: false
+weights:
+  f_title_bm25: 1.6
+  f_body_bm25: 1.2
+  f_semantic: 1.1
+  f_entity_overlap: 1.7
+  f_tag_overlap: 0.9
+  f_taxonomy_distance: 0.7
+  f_authority: 0.8
+  f_click_depth: 0.8
+  f_conversion_intent: 0.6
+  f_freshness: 0.5
+  f_lang_match: 0.6
+  f_quality: 0.9
+penalties:
+  f_duplicate_risk: 2.4
+  f_lang_mismatch: 1.2

@@ -10,6 +10,25 @@
         <p>Preview the enriched article, copy production-ready HTML, and review the internal links we added.</p>
     </header>
 
+    <section class="result-summary" aria-label="Linking overview">
+        <div class="metric">
+            <span class="metric-value">{{ total_inserted }}</span>
+            <span class="metric-label">Total links inserted</span>
+        </div>
+        <div class="metric">
+            <span class="metric-value">{{ priority_inserted }}</span>
+            <span class="metric-label">Priority matches</span>
+        </div>
+        <div class="metric">
+            <span class="metric-value">{{ auto_inserted }}</span>
+            <span class="metric-label">Automatic matches</span>
+        </div>
+        <div class="metric">
+            <span class="metric-value">{{ max_links }}</span>
+            <span class="metric-label">Requested limit</span>
+        </div>
+    </section>
+
     <div class="result-panels">
         <div class="result-preview" aria-labelledby="preview-heading">
             <h2 id="preview-heading">Preview</h2>
@@ -18,18 +37,67 @@
             </div>
         </div>
         <div class="result-code" aria-labelledby="html-heading">
-            <h2 id="html-heading">HTML output</h2>
-            <textarea rows="18" readonly aria-describedby="html-help">{{ linked_html }}</textarea>
+            <div class="code-header">
+                <h2 id="html-heading">HTML output</h2>
+                <button type="button" class="btn btn-secondary btn-copy" data-copy-target="#interlinked-html">Copy HTML</button>
+            </div>
+            <textarea id="interlinked-html" rows="18" readonly aria-describedby="html-help">{{ linked_html }}</textarea>
             <p id="html-help" class="small">Copy and paste this HTML directly into your publishing platform.</p>
+            <p class="copy-feedback" role="status" hidden>Copied to clipboard.</p>
         </div>
     </div>
 
     {% if inserted %}
         <section class="inserted-links" aria-labelledby="inserted-heading">
-            <h2 id="inserted-heading">Inserted links ({{ inserted|length }})</h2>
+            <h2 id="inserted-heading">Inserted links</h2>
+            <div class="inserted-columns">
+                <div class="inserted-group">
+                    <h3>Priority ({{ priority_inserted }})</h3>
+                    {% if priority_inserted %}
+                        <ul>
+                            {% for item in inserted %}
+                                {% if item.priority %}
+                                    <li>
+                                        <span class="link-term">{{ item.term }}</span>
+                                        <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.url }}</a>
+                                        {% if item.context %}<p class="context">…{{ item.context }}…</p>{% endif %}
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="muted">No priority terms were inserted.</p>
+                    {% endif %}
+                </div>
+                <div class="inserted-group">
+                    <h3>Automatic ({{ auto_inserted }})</h3>
+                    {% if auto_inserted %}
+                        <ul>
+                            {% for item in inserted %}
+                                {% if not item.priority %}
+                                    <li>
+                                        <span class="link-term">{{ item.term }}</span>
+                                        <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.url }}</a>
+                                        {% if item.context %}<p class="context">…{{ item.context }}…</p>{% endif %}
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="muted">No automatic suggestions were required.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
+    {% if priority_missing %}
+        <section class="priority-missing" aria-labelledby="missing-heading">
+            <h2 id="missing-heading">Priority keywords not matched</h2>
+            <p class="small">We could not find these phrases in the supplied content:</p>
             <ul>
-                {% for slug, url in inserted %}
-                    <li><code>{{ slug }}</code> → <a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a></li>
+                {% for term in priority_missing %}
+                    <li><code>{{ term }}</code></li>
                 {% endfor %}
             </ul>
         </section>
@@ -37,4 +105,70 @@
 
     <p><a class="link-more" href="{% url 'interlinker:interlink' %}">Back to interlink form</a></p>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const copyButtons = document.querySelectorAll('[data-copy-target]');
+            copyButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const target = document.querySelector(button.getAttribute('data-copy-target'));
+                    if (!target) {
+                        return;
+                    }
+                    const clipboardSupported = navigator.clipboard && typeof navigator.clipboard.writeText === 'function';
+                    const feedback = button.closest('.result-code').querySelector('.copy-feedback');
+
+                    const showFeedback = function (message, isSuccess) {
+                        if (!feedback) {
+                            return;
+                        }
+                        feedback.hidden = false;
+                        feedback.textContent = message;
+                        feedback.classList.toggle('error', !isSuccess);
+                        setTimeout(function () {
+                            feedback.hidden = true;
+                            feedback.classList.remove('error');
+                        }, 2500);
+                    };
+
+                    if (!clipboardSupported) {
+                        target.removeAttribute('readonly');
+                        target.select();
+                        let copied = false;
+                        try {
+                            copied = document.execCommand && document.execCommand('copy');
+                        } catch (err) {
+                            copied = false;
+                        }
+                        target.setAttribute('readonly', 'readonly');
+                        target.blur();
+                        window.getSelection().removeAllRanges();
+                        if (copied) {
+                            showFeedback('Copied to clipboard.', true);
+                            button.classList.add('copied');
+                            setTimeout(function () {
+                                button.classList.remove('copied');
+                            }, 1200);
+                        } else {
+                            showFeedback('Copy not available in this browser.', false);
+                        }
+                        return;
+                    }
+
+                    navigator.clipboard.writeText(target.value).then(function () {
+                        const feedback = button.closest('.result-code').querySelector('.copy-feedback');
+                        showFeedback('Copied to clipboard.', true);
+                        button.classList.add('copied');
+                        setTimeout(function () {
+                            button.classList.remove('copied');
+                        }, 1200);
+                    }).catch(function () {
+                        showFeedback('Copy not available in this browser.', false);
+                    });
+                });
+            });
+        });
+    </script>
 {% endblock %}

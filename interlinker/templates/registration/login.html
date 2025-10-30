@@ -1,0 +1,37 @@
+{% extends 'interlinker/base.html' %}
+
+{% block title %}Sign in to Interlinker{% endblock %}
+{% block meta_description %}Access your saved internal linking history and continue generating rich HTML with Interlinker.{% endblock %}
+
+{% block content %}
+<section class="section narrow">
+    <header class="section-header">
+        <h1>Welcome back</h1>
+        <p>Sign in to resume interlinking and access your saved generations.</p>
+    </header>
+    <div class="form-card">
+        <form method="post" class="form" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="form-errors" role="alert">
+                    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+            {% for field in form.visible_fields %}
+                <div class="form-field">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}<p class="form-helptext">{{ field.help_text }}</p>{% endif %}
+                    {% if field.errors %}
+                        <ul class="field-errors">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Sign in</button>
+                <p class="small">Need an account? <a href="{% url 'interlinker:signup' %}">Create one</a>.</p>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

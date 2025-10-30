@@ -7,6 +7,7 @@ slug used for matching keywords in reviews or blog posts.
 
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import models
 
 
@@ -36,3 +37,37 @@ class Link(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover - convenience display
         return self.url
+
+
+class InterlinkGeneration(models.Model):
+    """Stores a single interlink generation run for a user."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='interlink_generations',
+    )
+    domain = models.ForeignKey(
+        Domain,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='interlink_generations',
+    )
+    source_excerpt = models.TextField()
+    linked_html = models.TextField()
+    inserted_total = models.PositiveSmallIntegerField(default=0)
+    inserted_priority = models.PositiveSmallIntegerField(default=0)
+    inserted_auto = models.PositiveSmallIntegerField(default=0)
+    max_links = models.PositiveSmallIntegerField(default=10)
+    source_is_html = models.BooleanField(default=False)
+    priority_pairs = models.JSONField(default=list, blank=True)
+    inserted_records = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:  # pragma: no cover - convenience display
+        domain = self.domain.hostname if self.domain else 'unknown domain'
+        return f"{self.user} · {domain} · {self.created_at:%Y-%m-%d %H:%M}"

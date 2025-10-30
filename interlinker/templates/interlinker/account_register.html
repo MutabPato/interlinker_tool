@@ -1,0 +1,37 @@
+{% extends 'interlinker/base.html' %}
+
+{% block title %}Create Your Interlinker Account{% endblock %}
+{% block meta_description %}Sign up to generate, save, and revisit your internal linking runs in Interlinker.{% endblock %}
+
+{% block content %}
+<section class="section narrow">
+    <header class="section-header">
+        <h1>Create your account</h1>
+        <p>Save your interlinking runs, revisit previous exports, and keep everything organised in one place.</p>
+    </header>
+    <div class="form-card">
+        <form method="post" class="form" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="form-errors" role="alert">
+                    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+            {% for field in form.visible_fields %}
+                <div class="form-field">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}<p class="form-helptext">{{ field.help_text }}</p>{% endif %}
+                    {% if field.errors %}
+                        <ul class="field-errors">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Create account</button>
+                <p class="small">Already registered? <a href="{% url 'login' %}">Sign in</a> instead.</p>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

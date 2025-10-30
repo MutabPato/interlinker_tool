@@ -11,7 +11,7 @@
     </header>
 
     <div class="form-card">
-        <form method="post" enctype="multipart/form-data" class="form">
+        <form method="post" enctype="multipart/form-data" class="form" data-loading-form>
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" class="btn btn-primary">Import sitemap</button>

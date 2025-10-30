@@ -10,10 +10,10 @@ content based on keywords.
 from __future__ import annotations
 
 import gzip
-import io
 import re
 import urllib.request
-from typing import Dict, Iterable, List, Tuple
+from dataclasses import dataclass
+from typing import Dict, List, Sequence, Tuple
 from xml.etree import ElementTree
 
 from bs4 import BeautifulSoup, NavigableString  # type: ignore
@@ -25,6 +25,27 @@ SKIP_TAGS: set[str] = {"a", "code", "pre", "h1", "h2", "h3"}
 
 # Word boundary regex template used when compiling matchers for slugs
 WORD_BOUNDARY = r"(?<![A-Za-z0-9_]){term}(?![A-Za-z0-9_])"
+
+
+@dataclass(frozen=True)
+class LinkInsertion:
+    """Details about a link that was inserted into the HTML output."""
+
+    term: str
+    url: str
+    priority: bool
+    context: str | None = None
+
+
+@dataclass(frozen=True)
+class _TermMatcher:
+    """Compiled regex and metadata for a single keyword replacement."""
+
+    pattern: re.Pattern[str]
+    key: str
+    url: str
+    display_term: str
+    priority: bool
 
 
 def fetch_sitemap_text(url: str, timeout: int = 15) -> str | None:
@@ -168,31 +189,84 @@ def build_link_map(domain: Domain) -> Dict[str, str]:
     return slug_to_url
 
 
-def _compile_patterns(terms: Iterable[str]) -> List[Tuple[re.Pattern[str], str]]:
-    """Compile regex patterns for a list of search terms.
+def strip_existing_links_from_html(html: str) -> str:
+    """Remove anchor tags from ``html`` while preserving their inner content."""
 
-    Longer terms are prioritised by sorting the list in descending order of
-    length, preventing shorter terms from matching inside longer phrases.
+    if not html:
+        return html
 
-    Parameters
-    ----------
-    terms:
-        An iterable of normalised slug terms to be converted into regex
-        patterns.
+    try:
+        soup = BeautifulSoup(html, 'lxml')
+    except Exception:
+        soup = BeautifulSoup(html, 'html.parser')
 
-    Returns
-    -------
-    list of tuple
-        Each tuple contains a compiled regular expression and its
-        corresponding term.
-    """
-    unique = sorted(set(terms), key=lambda s: (-len(s), s))
-    patterns: List[Tuple[re.Pattern[str], str]] = []
-    for term in unique:
-        escaped = re.escape(term)
-        pat = re.compile(WORD_BOUNDARY.format(term=escaped), flags=re.IGNORECASE)
-        patterns.append((pat, term))
-    return patterns
+    for anchor in soup.find_all('a'):
+        anchor.unwrap()
+
+    return str(soup)
+
+
+def _normalize_term(term: str) -> str:
+    """Return a lowercase, single-space version of ``term`` for lookups."""
+
+    return re.sub(r"\s+", " ", term.strip().lower())
+
+
+def _clean_display_term(term: str) -> str:
+    """Collapse internal whitespace but preserve the original casing."""
+
+    return re.sub(r"\s+", " ", term.strip())
+
+
+def _build_term_matchers(
+    slug_to_url: Dict[str, str],
+    priority_pairs: Sequence[tuple[str, str]],
+) -> List[_TermMatcher]:
+    """Combine priority entries with sitemap slugs into regex matchers."""
+
+    matchers: List[_TermMatcher] = []
+    seen_keys: set[str] = set()
+
+    # Add user-specified priority pairs first, respecting their order.
+    for term, url in priority_pairs:
+        display = _clean_display_term(term)
+        if not display:
+            continue
+        key = _normalize_term(display)
+        if key in seen_keys:
+            continue
+        pattern = re.compile(WORD_BOUNDARY.format(term=re.escape(display)), flags=re.IGNORECASE)
+        matchers.append(_TermMatcher(pattern=pattern, key=key, url=url, display_term=display, priority=True))
+        seen_keys.add(key)
+
+    # Next process automatic slugs, preferring longer phrases first.
+    sortable: List[Tuple[str, str]] = []
+    for slug, url in slug_to_url.items():
+        display = _clean_display_term(slug)
+        if not display:
+            continue
+        sortable.append((display, url))
+
+    sortable.sort(key=lambda item: (-len(item[0]), item[0]))
+
+    for display, url in sortable:
+        key = _normalize_term(display)
+        if key in seen_keys:
+            continue
+        pattern = re.compile(WORD_BOUNDARY.format(term=re.escape(display)), flags=re.IGNORECASE)
+        matchers.append(_TermMatcher(pattern=pattern, key=key, url=url, display_term=display, priority=False))
+        seen_keys.add(key)
+
+    return matchers
+
+
+def _extract_context_snippet(text: str, match: re.Match[str], window: int = 45) -> str:
+    """Return a trimmed snippet of ``text`` surrounding the match."""
+
+    start = max(0, match.start() - window)
+    end = min(len(text), match.end() + window)
+    snippet = text[start:end].strip()
+    return re.sub(r"\s+", " ", snippet)
 
 
 def _should_skip(node: NavigableString) -> bool:
@@ -221,39 +295,52 @@ def _should_skip(node: NavigableString) -> bool:
     return False
 
 
-def interlink_html(html: str, slug_to_url: Dict[str, str], max_links: int = 10) -> str:
-    """Insert anchor tags into HTML for keywords matched in slug_to_url.
+def interlink_html(
+    html: str,
+    slug_to_url: Dict[str, str],
+    max_links: int = 10,
+    *,
+    priority_pairs: Sequence[tuple[str, str]] | None = None,
+    max_links_per_block: int = 3,
+) -> Tuple[str, List[LinkInsertion]]:
+    """Insert anchors for matching keywords and return the enriched HTML.
 
-    The function scans through paragraph-like blocks (``<p>`` and ``<li>``
-    elements) and replaces the first occurrence of each keyword (slug) with
-    an anchor tag pointing to the associated URL. Matching is done on
-    whole-word boundaries and is case-insensitive. A global limit on
-    inserted links prevents overlinking. If a keyword appears multiple
-    times, only the first occurrence is linked.
+    The function processes paragraph-style content, prioritising user
+    supplied ``priority_pairs`` before falling back to automatically
+    discovered sitemap slugs. Each keyword is linked at most once, the
+    matching is case-insensitive, and tags such as headers and code blocks
+    are deliberately skipped to preserve readability.
 
     Parameters
     ----------
     html:
-        The HTML content into which links should be injected. This may
-        contain arbitrary markup.
+        The HTML content into which links should be injected.
     slug_to_url:
-        A mapping of normalised keywords to their target URLs. Only the
-        keys of this mapping are considered for linking.
+        Mapping of normalised sitemap slugs to canonical URLs.
     max_links:
-        The maximum number of links to insert. Once this limit is
-        reached no further replacements are attempted.
+        Overall cap on links to insert.
+    priority_pairs:
+        Optional sequence of ``(keyword, url)`` tuples that should be
+        linked ahead of automatic suggestions.
+    max_links_per_block:
+        Soft limit for automatic links inside a single text block (priority
+        links ignore this budget). Helps avoid overlinking inside one
+        paragraph.
 
     Returns
     -------
-    str
-        The modified HTML with anchor tags inserted. If ``slug_to_url``
-        is empty or no matches are found, the original HTML is returned.
+    tuple
+        ``(html, inserted)`` where ``html`` is the enriched markup and
+        ``inserted`` is a list of :class:`LinkInsertion` metadata.
     """
-    if not slug_to_url or not html:
-        return html
 
-    # Build patterns for each slug, prioritising longer phrases
-    patterns = _compile_patterns(slug_to_url.keys())
+    if not html:
+        return html, []
+
+    pairs = priority_pairs or []
+    matchers = _build_term_matchers(slug_to_url, pairs)
+    if not matchers:
+        return html, []
 
     try:
         soup = BeautifulSoup(html, 'lxml')
@@ -261,14 +348,21 @@ def interlink_html(html: str, slug_to_url: Dict[str, str], max_links: int = 10) 
         # Fallback to html.parser if lxml isn't installed
         soup = BeautifulSoup(html, 'html.parser')
 
-    blocks = soup.find_all(['p', 'li'])
-    linked_terms: set[str] = set()
+    block_tags = ['p', 'li', 'blockquote']
+    blocks = soup.find_all(block_tags)
+    if not blocks:
+        blocks = [soup]
+
+    linked_keys: set[str] = set()
+    inserted: List[LinkInsertion] = []
     link_count = 0
+    per_block_limit = max(1, min(max_links, max_links_per_block))
 
     for block in blocks:
         if link_count >= max_links:
             break
-        # Iterate over all descendant text nodes for potential replacement
+
+        block_links = 0
         for text_node in list(block.descendants):
             if link_count >= max_links:
                 break
@@ -276,30 +370,51 @@ def interlink_html(html: str, slug_to_url: Dict[str, str], max_links: int = 10) 
                 continue
             if _should_skip(text_node):
                 continue
+
             original = str(text_node)
-            replaced = original
-            # Try each pattern until a match is made or exhausted
-            for pat, term in patterns:
-                if term in linked_terms:
+            if not original or not original.strip():
+                continue
+
+            for matcher in matchers:
+                if matcher.key in linked_keys:
                     continue
-                m = pat.search(replaced)
-                if m:
-                    target = slug_to_url.get(term)
-                    if not target:
-                        continue
-                    anchor = f'<a href="{target}">{m.group(0)}</a>'
-                    # Replace only the first occurrence
-                    replaced = pat.sub(anchor, replaced, count=1)
-                    linked_terms.add(term)
-                    link_count += 1
-                    break
-            if replaced != original:
-                try:
-                    new_fragment = BeautifulSoup(replaced, 'lxml')
-                except Exception:
-                    new_fragment = BeautifulSoup(replaced, 'html.parser')
-                text_node.replace_with(new_fragment)
-            if link_count >= max_links:
+                if not matcher.priority and block_links >= per_block_limit:
+                    continue
+
+                match = matcher.pattern.search(original)
+                if not match:
+                    continue
+
+                after = original[match.end():]
+                if after:
+                    text_node.insert_after(after)
+
+                anchor = soup.new_tag('a', href=matcher.url)
+                anchor['class'] = ['interlinked-anchor']
+                anchor['data-source'] = 'priority' if matcher.priority else 'auto'
+                anchor.string = match.group(0)
+                text_node.insert_after(anchor)
+
+                before = original[:match.start()]
+                if before:
+                    text_node.replace_with(before)
+                else:
+                    text_node.extract()
+
+                linked_keys.add(matcher.key)
+                link_count += 1
+                block_links += 1
+
+                context = _extract_context_snippet(original, match) or None
+                inserted.append(
+                    LinkInsertion(
+                        term=matcher.display_term,
+                        url=matcher.url,
+                        priority=matcher.priority,
+                        context=context,
+                    )
+                )
+
                 break
 
-    return str(soup)
+    return str(soup), inserted

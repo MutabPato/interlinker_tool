@@ -1,0 +1,14 @@
+[
+  {
+    "target_url": "https://example.com/reviews/acme-mega-camera",
+    "reason": "strong shared entities; strong content overlap",
+    "score": 0.78,
+    "anchors": [
+      {"text": "Acme Mega Camera Review Hub", "start": 68, "end": 95, "variant": "exact"},
+      {"text": "Acme Mega Camera", "start": 12, "end": 28, "variant": "entity"}
+    ],
+    "placement_hint": "intro",
+    "rel": "follow",
+    "risk_flags": []
+  }
+]

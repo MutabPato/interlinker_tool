@@ -6,88 +6,160 @@
 {% block og_description %}Interlinker parses your sitemap, finds relevant keywords in long-form content, and inserts context-aware internal links.{% endblock %}
 
 {% block content %}
-<section class="hero">
-    <div class="hero-copy">
-        <h1>Ship content with perfect internal links — every time.</h1>
-        <p>Interlinker combines your sitemap with powerful keyword matching so you can publish SEO-friendly articles without the manual linking grind.</p>
-        <div class="hero-ctas">
-            <a class="btn btn-primary" href="{% url 'interlinker:sitemap_upload' %}">Import a sitemap</a>
-            <a class="btn btn-secondary" href="{% url 'interlinker:interlink' %}">Try the interlinker</a>
+<section class="hero hero-xl">
+    <div class="hero-body">
+        <div class="hero-badge">New • Priority keywords included</div>
+        <h1>One workspace to import, enrich, and publish internal links.</h1>
+        <p class="lead">Interlinker ingests your sitemap, maps keywords, and generates production-ready HTML in minutes. Give your editors a repeatable workflow that scales.</p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="{% url 'interlinker:interlink' %}">Launch the interlinker</a>
+            <a class="btn btn-secondary" href="{% url 'interlinker:sitemap_upload' %}">Upload sitemap</a>
         </div>
-        <p class="hero-meta">No copy-paste gymnastics. No broken links. Just cleaner navigation and better rankings.</p>
+        <div class="hero-stats">
+            <div>
+                <p class="hero-stat">94%</p>
+                <span>time saved per article</span>
+            </div>
+            <div>
+                <p class="hero-stat">+38%</p>
+                <span>increase in internal link clicks</span>
+            </div>
+            <div>
+                <p class="hero-stat">0</p>
+                <span>manual HTML edits required</span>
+            </div>
+        </div>
     </div>
     <div class="hero-visual" aria-hidden="true">
-        <div class="hero-bubble">
-            <p><span>96%</span><small>time saved per article</small></p>
-        </div>
-        <div class="hero-bubble alt">
-            <p><span>3x</span><small>more internal clicks</small></p>
+        <div class="hero-card">
+            <p class="hero-card-title">Recent run</p>
+            <ul>
+                <li><span>Domain</span><strong>content.site</strong></li>
+                <li><span>Priority terms</span><strong>7 inserted</strong></li>
+                <li><span>Total links</span><strong>12/12</strong></li>
+            </ul>
+            <a href="{% url 'interlinker:history' %}" class="btn btn-secondary">View history</a>
         </div>
     </div>
 </section>
 
-<section class="section">
-    <h2 class="section-title">Why teams choose Interlinker</h2>
+<section class="section trusted">
+    <div class="trusted-label">Trusted by content and SEO teams</div>
+    <div class="trusted-logos" aria-hidden="true">
+        <span>Atlas Labs</span>
+        <span>Northwind Media</span>
+        <span>Pipeline Press</span>
+        <span>Beacon Analytics</span>
+        <span>Pixel Voyage</span>
+    </div>
+</section>
+
+<section class="section features">
+    <header class="section-heading">
+        <h2>Everything you need to automate internal linking</h2>
+        <p>From the first sitemap import to the final publish-ready HTML, Interlinker keeps every step consistent and documented.</p>
+    </header>
     <div class="feature-grid">
         <article class="feature-card">
-            <h3>Instant sitemap ingestion</h3>
-            <p>Upload a file or fetch from a URL. We normalise slugs and keep domains tidy for reliable matches.</p>
+            <div class="icon-circle">🗂️</div>
+            <h3>Sitemap ingestion</h3>
+            <p>Fetch or upload XML in seconds. We deduplicate URLs, derive keyword-ready slugs, and keep your catalogue synced.</p>
             <a href="{% url 'interlinker:sitemap_upload' %}" class="link-more">Import links</a>
         </article>
         <article class="feature-card">
-            <h3>Smart keyword mapping</h3>
-            <p>Longer phrases win, headings are respected, and links land exactly where readers expect them.</p>
-            <a href="{% url 'interlinker:interlink' %}" class="link-more">See the interlinker</a>
+            <div class="icon-circle">✨</div>
+            <h3>Priority keywords</h3>
+            <p>Override the algorithm with business-critical anchors. Priority phrases insert first and surface in run reports.</p>
+            <a href="{% url 'interlinker:interlink' %}" class="link-more">Try the interlinker</a>
         </article>
         <article class="feature-card">
-            <h3>Human-friendly HTML output</h3>
-            <p>Preview, copy, and ship. Clean anchor tags and accessible markup ready for your CMS.</p>
-            <a href="{% url 'interlinker:sitemap_links' %}" class="link-more">Review stored links</a>
+            <div class="icon-circle">🧭</div>
+            <h3>Editorial guardrails</h3>
+            <p>Heading-aware linking, per-paragraph caps, and clean anchor markup mean less QA and smoother CMS handoff.</p>
+            <a href="{% url 'interlinker:sitemap_links' %}" class="link-more">Browse stored links</a>
         </article>
     </div>
 </section>
 
-<section class="section alt">
-    <h2 class="section-title">How it works</h2>
-    <ol class="steps">
-        <li>
-            <h3>Connect your sitemap</h3>
-            <p>Upload a sitemap file or share a URL. We deduplicate and store every internal page.</p>
-        </li>
-        <li>
-            <h3>Paste your content</h3>
-            <p>Drop in raw text or HTML. Choose how many links to insert and which domain to scan.</p>
-        </li>
-        <li>
-            <h3>Publish with confidence</h3>
-            <p>Export the generated HTML or share the preview with your editor — no edits required.</p>
-        </li>
-    </ol>
+<section class="section layout-split">
+    <div class="split-copy">
+        <h2>Interlinking that fits your workflow</h2>
+        <p>Whether you&rsquo;re publishing ten articles a week or managing a sprawling knowledge base, Interlinker keeps your internal linking strategy aligned with every new page.</p>
+        <ul class="feature-bullets">
+            <li><strong>Team-ready history:</strong> Every run is stored with context so writers and editors stay coordinated.</li>
+            <li><strong>HTML or plain text:</strong> Paste content however it comes. We structure it automatically.</li>
+            <li><strong>Explainable output:</strong> View inserted anchors, priority matches, and missed opportunities at a glance.</li>
+        </ul>
+    </div>
+    <div class="split-card" aria-hidden="true">
+        <div class="split-card-header">
+            <span>Interlink report</span>
+            <span class="badge">Completed</span>
+        </div>
+        <div class="split-card-body">
+            <dl>
+                <div><dt>Total links</dt><dd>12</dd></div>
+                <div><dt>Priority matches</dt><dd>7</dd></div>
+                <div><dt>Automatic matches</dt><dd>5</dd></div>
+                <div><dt>Missed priorities</dt><dd>2</dd></div>
+            </dl>
+            <p class="small">Share this summary with your editors or clients to validate coverage before publishing.</p>
+        </div>
+    </div>
 </section>
 
-<section class="section">
-    <h2 class="section-title">Built for SEO & content pros</h2>
-    <div class="stat-grid">
-        <div>
-            <p class="stat">+42%</p>
-            <p class="stat-label">Average increase in pages per session after consistent internal linking.</p>
-        </div>
-        <div>
-            <p class="stat">15 mins</p>
-            <p class="stat-label">Average setup to interlink your first long-form article.</p>
-        </div>
-        <div>
-            <p class="stat">0 broken links</p>
-            <p class="stat-label">Domains are validated during ingestion to keep hyperlink hygiene high.</p>
-        </div>
+<section class="section workflow">
+    <header class="section-heading">
+        <h2>An opinionated workflow that keeps quality high</h2>
+        <p>Everything about Interlinker is designed to keep your links relevant, contextual, and easy to maintain.</p>
+    </header>
+    <div class="workflow-steps">
+        <article>
+            <span class="step-number">01</span>
+            <h3>Connect a domain</h3>
+            <p>Grab every eligible page from your sitemap. Titles and slugs stay in sync thanks to automatic refreshes.</p>
+        </article>
+        <article>
+            <span class="step-number">02</span>
+            <h3>Paste content & priorities</h3>
+            <p>Drop in raw copy and optional priority anchors. Interlinker respects existing headings and avoids code blocks.</p>
+        </article>
+        <article>
+            <span class="step-number">03</span>
+            <h3>Review, copy, publish</h3>
+            <p>Preview the rendered article, copy the HTML, and share metrics or missed phrases with stakeholders.</p>
+        </article>
+    </div>
+</section>
+
+<section class="section pricing">
+    <header class="section-heading">
+        <h2>All features. Always free.</h2>
+        <p>Interlinker gives you the full workflow without paywalls or usage caps. Import, generate, and revisit history as much as you need.</p>
+    </header>
+    <div class="pricing-grid">
+        <article class="pricing-card">
+            <h3>Free plan</h3>
+            <p class="price">$0 <span>/ forever</span></p>
+            <ul>
+                <li>Unlimited sitemap imports and refreshes</li>
+                <li>Unlimited interlink generations with priority keywords</li>
+                <li>Full history storage for every run</li>
+                <li>Instant HTML output ready for your CMS</li>
+            </ul>
+            <a class="btn btn-primary" href="{% url 'interlinker:signup' %}">Create your free account</a>
+        </article>
     </div>
 </section>
 
 <section class="section cta">
     <div class="cta-card">
         <h2>Ready to automate your internal linking?</h2>
-        <p>Import your sitemap to start building a reliable internal linking strategy that scales with your content calendar.</p>
-        <a class="btn btn-primary" href="{% url 'interlinker:sitemap_upload' %}">Start now</a>
+        <p>Spin up an account in minutes, import your sitemap, and publish your next article with perfect internal links.</p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="{% url 'interlinker:signup' %}">Sign up free</a>
+            <a class="btn btn-secondary" href="mailto:hello@example.com">Book a walkthrough</a>
+        </div>
     </div>
 </section>
 {% endblock %}

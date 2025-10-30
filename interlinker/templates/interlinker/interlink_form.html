@@ -10,9 +10,82 @@
         <p>Paste plain text or HTML, pick the domain to match against, and choose how many smart internal links to insert.</p>
     </header>
     <div class="form-card">
-        <form method="post" class="form">
+        <form method="post" class="form" novalidate data-loading-form>
             {% csrf_token %}
-            {{ form.as_p }}
+            {% if form.non_field_errors %}
+                <div class="form-errors" role="alert">
+                    {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="form-grid">
+                <div class="form-field">
+                    {{ form.domain.label_tag }}
+                    {{ form.domain }}
+                    {% if form.domain.help_text %}<p class="form-helptext">{{ form.domain.help_text }}</p>{% endif %}
+                    {% if form.domain.errors %}
+                        <ul class="field-errors">{% for error in form.domain.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-field">
+                    {{ form.max_links.label_tag }}
+                    {{ form.max_links }}
+                    {% if form.max_links.help_text %}<p class="form-helptext">{{ form.max_links.help_text }}</p>{% endif %}
+                    {% if form.max_links.errors %}
+                        <ul class="field-errors">{% for error in form.max_links.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-field checkbox-field">
+                    <label class="checkbox">
+                        {{ form.is_html_input }}
+                        <span>{{ form.is_html_input.label }}</span>
+                    </label>
+                    {% if form.is_html_input.help_text %}<p class="form-helptext">{{ form.is_html_input.help_text }}</p>{% endif %}
+                    {% if form.is_html_input.errors %}
+                        <ul class="field-errors">{% for error in form.is_html_input.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+
+                <div class="form-field checkbox-field">
+                    <label class="checkbox">
+                        {{ form.strip_existing_links }}
+                        <span>{{ form.strip_existing_links.label }}</span>
+                    </label>
+                    {% if form.strip_existing_links.help_text %}<p class="form-helptext">{{ form.strip_existing_links.help_text }}</p>{% endif %}
+                    {% if form.strip_existing_links.errors %}
+                        <ul class="field-errors">{% for error in form.strip_existing_links.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-field">
+                {{ form.content.label_tag }}
+                {{ form.content }}
+                {% if form.content.help_text %}<p class="form-helptext">{{ form.content.help_text }}</p>{% endif %}
+                {% if form.content.errors %}
+                    <ul class="field-errors">{% for error in form.content.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+
+            <div class="form-field">
+                {{ form.priority_pairs.label_tag }}
+                {{ form.priority_pairs }}
+                {% if form.priority_pairs.help_text %}<p class="form-helptext">{{ form.priority_pairs.help_text }}</p>{% endif %}
+                <details class="priority-guidance">
+                    <summary>Formatting tips</summary>
+                    <ul>
+                        <li>One priority per line using <code>keyword -> https://url</code>.</li>
+                        <li>Use the keyword variation you want linked in the content.</li>
+                        <li>Priority links override automatic matches and are inserted first.</li>
+                    </ul>
+                </details>
+                {% if form.priority_pairs.errors %}
+                    <ul class="field-errors">{% for error in form.priority_pairs.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">Generate interlinked HTML</button>
                 <p class="small">We never modify more than one link per keyword, keeping copy natural.</p>
