@@ -21,35 +21,48 @@ Up to **10 relevant keywords per post** are automatically interlinked.
 
 ## 🚀 Getting Started
 
-### 1. Clone and unzip the project
+### Quick start (Docker + Make)
 
-```bash
-unzip interlinker_project.zip
-cd interlinker_project
-```
+1. Copy the sample environment file:
 
-### 2. Create a virtual environment & install dependencies
+   ```bash
+   cp .env.example .env
+   ```
+
+   Adjust values if you need a non-default port, secret key, or database.
+
+2. Build and start the stack:
+
+   ```bash
+   make up
+   ```
+
+   The Makefile wraps common Docker commands, using `sudo` automatically on Linux. Overwrite `USE_SUDO=0` if your user already has Docker access.
+
+3. Open the app at [http://127.0.0.1:8000/](http://127.0.0.1:8000/) and upload a sitemap to begin.
+
+Useful helpers:
+
+- `make logs` to tail container logs.
+- `make migrate` to apply database migrations inside the running container.
+- `make down` to stop the stack.
+
+### Local development (without Docker)
 
 ```bash
 python -m venv venv
 source venv/bin/activate
-pip install django beautifulsoup4 lxml
-```
-
-### 3. Run migrations
-
-```bash
-cd interlinker_project
+pip install -r requirements.txt
+cp .env.example .env
 python manage.py migrate
-```
-
-### 4. Start the development server
-
-```bash
 python manage.py runserver
 ```
 
-👉 Visit: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+The repository also ships with `bin/devserver`, which loads `.env` or `.env.example`, applies migrations, and boots the Django dev server in one command:
+
+```bash
+./bin/devserver
+```
 
 ---
 
@@ -108,8 +121,10 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 ## 🧪 Development Tips
 
-- Debug sitemap fetch issues by checking **HTTP status codes** in `services.py`.  
-- Some sites block bots — try with your own site or use `https://docs.python.org` for testing.  
+- Debug sitemap fetch issues by checking **HTTP status codes** in `services.py`.
+- Some sites block bots — try with your own site or use `https://docs.python.org` for testing.
+- Use `make shell` or `docker exec -it interlinker_app /bin/sh` to inspect the running container.
+- Run tests with `pytest` (default settings pick up `.env.example` so SQLite is used locally).
 
 ---
 
