@@ -23,7 +23,10 @@ Up to **10 relevant keywords per post** are automatically interlinked.
 
 ### Quick start (Docker + Make)
 
-1. Copy the sample environment file:
+#### Linux / macOS
+
+1. Install Docker Engine (Linux) or Docker Desktop (macOS) and ensure `make` is available (`brew install make` on macOS if needed).
+2. Copy the sample environment file:
 
    ```bash
    cp .env.example .env
@@ -31,17 +34,45 @@ Up to **10 relevant keywords per post** are automatically interlinked.
 
    Adjust values if you need a non-default port, secret key, or database.
 
-2. Build and start the stack:
+3. Build and start the stack:
 
    ```bash
    make up
    ```
 
-   The Makefile wraps common Docker commands, using `sudo` automatically on Linux. Overwrite `USE_SUDO=0` if your user already has Docker access.
+   On macOS or Linux systems where Docker runs rootless, disable sudo by appending `USE_SUDO=0` (for example `make up USE_SUDO=0`).
 
-3. Open the app at [http://127.0.0.1:8000/](http://127.0.0.1:8000/) and upload a sitemap to begin.
+4. Open the app at [http://127.0.0.1:8000/](http://127.0.0.1:8000/) and upload a sitemap to begin.
 
-Useful helpers:
+#### Windows
+
+1. Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) and either:
+   - Use the bundled Git Bash shell (preferred), or
+   - Enable WSL 2 and work from an Ubuntu/WSL prompt.
+   If you stay on PowerShell or Command Prompt, install GNU Make (`choco install make`).
+2. Copy the sample environment file:
+
+   ```bash
+   copy .env.example .env
+   ```
+
+   (Use `cp` instead when running inside Git Bash or WSL.)
+
+3. Start the stack (Git Bash / WSL):
+
+   ```bash
+   make up USE_SUDO=0
+   ```
+
+   PowerShell alternative:
+
+   ```powershell
+   mingw32-make up USE_SUDO=0
+   ```
+
+4. Visit [http://127.0.0.1:8000/](http://127.0.0.1:8000/) to confirm the app is running.
+
+Useful helpers (all platforms):
 
 - `make logs` to tail container logs.
 - `make migrate` to apply database migrations inside the running container.
@@ -63,6 +94,8 @@ The repository also ships with `bin/devserver`, which loads `.env` or `.env.exam
 ```bash
 ./bin/devserver
 ```
+
+Windows users should run the script from Git Bash or WSL; if you prefer PowerShell, execute `python manage.py migrate` followed by `python manage.py runserver` instead.
 
 ---
 
